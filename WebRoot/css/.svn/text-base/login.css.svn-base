@@ -1,0 +1,56 @@
+@charset "utf-8";
+/* CSS Document */
+/*公共样式*/
+body{font:normal 12px/20px Verdana, Arial, sans-serif; background:#fff;}
+*{ margin:0; padding:0;}
+img{border:0 none;vertical-align:top;}
+ul{ list-style-type:none;}
+h1,h2,h3,h4,h5,h6,p{font:normal 12px/20px Verdana, Arial, sans-serif; margin:0; padding:0;}
+a{ text-decoration:none; color:#193500;}
+a:hover{ text-decoration:underline;}
+.clear{ clear:both;}
+.Nr{ width:100%; margin:auto;}
+/*head*/
+.top{ width:100%; background-color:#fff; box-shadow:3px 4px 3px #ccc;}
+.top_logo{ width:960px; margin:0px auto; height:90px; }
+
+/*center*/
+.cen{ width:100%; background-color:#6699bf;}
+.cen_pic{background:url(../images/jiao-dian3.jpg) no-repeat; width:100%;}
+.login_box{ width:1000px; height:460px; margin:0 auto; overflow:hidden; }
+.login{width: 320px;
+	height: 460px;
+	float: right;
+	position: relative;
+	z-index: 999;	
+	background:url(../images/bg_login.png) no-repeat;
+      
+ }
+.login_tt{ border-bottom:1px solid #fff; font-family:"微软雅黑"; width:280px; margin-top:50px; margin-left:25px; font-size:20px; color:#fff; line-height:35px;}
+.login input{ border:none; line-height:40px;vtical-align:middle;}
+.login form{ margin-left:25px; overflow:hidden; } 
+.login_user{ height:40px; width:230px;color:#333;  background:url(../images/user.png) no-repeat; padding-left:45px; margin-top:30px; }
+.login_password{ height:40px; width:230px;  color:#333;  background:url(../images/password.png) no-repeat; padding-left:45px; margin-top:5px; }
+.placeholder{
+	position: absolute;
+	color:#333;
+	left: 71px;
+	top: 171px;
+	}
+
+.login_vcode{ height:40px; width:95px;color:#333;  margin-top:5px; background:url(../images/vcode.png) no-repeat;padding-left:45px;}
+.login_reset{
+	height: 35px;
+	width: 119px;
+	float: right;
+	position: absolute;
+	top: 209px;
+	left: 171px;
+	line-height: 35px;
+}
+.login_reset img{ vertical-align:middle; width:90px; height:35px; }
+.login_reset a:link,.login_reset a:visited{ color:#FFF; font-weight:bold;}
+.login_reset a:hover{ color:#09F;}
+
+/*foot*/
+.foot{ width:100%; text-align:center; line-height:25px; background-color:#fff; padding-top:15px; padding-bottom:15px; color:#666;}

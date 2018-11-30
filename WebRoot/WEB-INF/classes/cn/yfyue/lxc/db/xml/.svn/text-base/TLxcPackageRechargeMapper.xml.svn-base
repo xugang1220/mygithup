@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.yfyue.lxc.db.inter.TLxcPackageRechargeMapper" >
+
+  <resultMap id="BaseResultMap" type="cn.yfyue.lxc.db.model.TLxcPackageRecharge" >
+   
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="remove" property="remove" jdbcType="BIT" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="package_discount_id" property="packageDiscountId" jdbcType="INTEGER" />
+    <result column="giving_money" property="givingMoney" jdbcType="REAL" />
+    <result column="rechare_money" property="rechareMoney" jdbcType="REAL" />
+    <result column="consumer_id" property="consumerId" jdbcType="INTEGER" />
+    <result column="order_status" property="orderStatus" jdbcType="VARCHAR" />
+  
+  </resultMap>
+
+  <resultMap id="ResultCustomerName" type="cn.yfyue.lxc.db.warp.CustomerWarp" >
+  	<id column="id" property="id" jdbcType="INTEGER" />
+   	<result column="remove" property="remove" jdbcType="BIT" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="package_discount_id" property="packageDiscountId" jdbcType="INTEGER" />
+    <result column="giving_money" property="givingMoney" jdbcType="REAL" />
+    <result column="rechare_money" property="rechareMoney" jdbcType="REAL" />
+    <result column="consumer_id" property="consumerId" jdbcType="INTEGER" />
+    <result column="order_status" property="orderStatus" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <resultMap id="CustomerSumoney" type="cn.yfyue.lxc.db.model.RecharSumoney" >
+    <result column="sumrechareMoney" property="sumrechareMoney" jdbcType="VARCHAR" />
+    <result column="sumgivingMoney" property="sumgivingMoney" jdbcType="VARCHAR" />
+  </resultMap>
+  <!-- //统计总充值金额和赠送金额
+	List<TLxcPackageRecharge> getRechargeSumoney(@Param("startDate")String startDate,
+	@Param("endDate")String endDate, @Param("startRow") 
+	int startRow,@Param("rownum")int rownum); -->
+  <select id="getRechargeSumoney" resultMap="CustomerSumoney">
+  		SELECT SUM(rechare_money)as sumrechareMoney,SUM(giving_money)as sumgivingMoney FROM t_lxc_package_recharge WHERE 1=1	
+  		<if test="startDate !=null and startDate !=''">
+             AND  create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}      
+		</if>
+		<if test="endDate !=null and endDate !=''">
+             AND  create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+		</if>
+		
+  </select>
+  
+  
+  <!-- 查询充值情况 -->
+  <select id="getRechargeList" resultMap="ResultCustomerName">
+  	SELECT b.nickname,a.create_time,a.rechare_money,a.giving_money,a.order_status 
+		from t_lxc_package_recharge a 
+		INNER JOIN
+		t_lxc_customer b
+		WHERE a.consumer_id=b.id	
+		<if test="qkey !=null">
+		 	AND b.nickname LIKE '%${qkey}%'
+		 </if>
+		 ORDER BY a.create_time DESC LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER} 
+  </select>
+<!--统计-->  
+ <select id="getRechargeListCount" resultType="java.lang.Integer">
+    SELECT COUNT(1) FROM t_lxc_package_recharge a INNER JOIN t_lxc_customer b WHERE a.consumer_id=b.id
+		 <if test="qkey !=null">
+		    AND b.nickname LIKE '%${qkey}%'
+		 </if>
+ </select>
+ <!-- 删除充值记录 -->
+ <delete id="delRechargeById">
+ 	DELETE FROM t_lxc_package_recharge WHERE ID=#{id,jdbcType=INTEGER}
+ </delete>
+  <!-- 添加充值记录 -->
+  <insert id="addRecharge">
+  	<selectKey resultType="java.lang.Integer" order="AFTER" keyProperty="id">
+          SELECT LAST_INSERT_ID()
+    </selectKey>
+  	INSERT INTO t_lxc_package_recharge (remove,create_time,update_time,package_discount_id,giving_money,rechare_money,consumer_id,order_status)
+  	VALUES(#{remove,jdbcType=BIT},#{createTime,jdbcType=TIMESTAMP},#{updateTime,jdbcType=TIMESTAMP},
+  	#{packageDiscountId,jdbcType=INTEGER},#{givingMoney,jdbcType=REAL},#{rechareMoney,jdbcType=REAL},
+  	#{consumerId,jdbcType=INTEGER},#{orderStatus,jdbcType=VARCHAR})
+  </insert>
+ <!--  //根据openId查询客户的充值记录
+	(@Param("openId")String openId,@Param("startRow")int startRow,@Param("rownum")int rownum); -->
+  <select id="findRechargeList" resultMap="ResultCustomerName">
+   	SELECT d.DATA_NAME as orderStatusStr,id,remove,create_time,update_time,package_discount_id,giving_money,rechare_money,consumer_id,order_status FROM t_lxc_package_recharge 
+   	LEFT JOIN BJ_INIT_DATA d on d.DATA_CODE=order_status
+   	WHERE consumer_id=#{consumerId}	ORDER BY id DESC LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER} 
+  </select>
+  
+  <update id="updateRecharge">
+ 	update t_lxc_package_recharge 
+ 	set order_status = #{orderStatus,jdbcType=VARCHAR},
+	update_time = now()
+	where id = #{id,jdbcType=INTEGER}
+ </update>
+ 
+ <select id="findByPrimaryKey" resultMap="BaseResultMap">
+   	select id,consumer_id,giving_money,rechare_money,order_status from t_lxc_package_recharge WHERE id=#{id}
+  </select>
+ 
+  <!-- 充值报表查询全部 -->
+  <select id="getRechargePortList" resultMap="ResultCustomerName">
+  	SELECT b.nickname,a.create_time,a.rechare_money,a.giving_money
+		from t_lxc_package_recharge a 
+		INNER JOIN
+		t_lxc_customer b
+		WHERE a.consumer_id=b.id
+	<if test="startDate !=null and startDate !=''">
+             AND  a.create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}      
+	</if>
+	<if test="endDate !=null and endDate !=''">
+             AND  a.create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+	</if>
+	 ORDER BY a.create_time DESC 
+	 LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER} 
+  </select>
+ 
+ <!--充值报表统计-->  
+ <select id="getRechargePortCount" resultType="java.lang.Integer">
+    SELECT COUNT(1) FROM t_lxc_package_recharge WHERE 1=1
+ 	<if test="startDate !=null and startDate !=''">
+             AND  create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}      
+	</if>
+	<if test="endDate !=null and endDate !=''">
+             AND  create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+	</if>
+	
+ </select>
+ 
+</mapper>

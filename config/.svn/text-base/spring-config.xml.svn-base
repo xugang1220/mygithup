@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa-1.3.xsd
+		http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.0.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.0.xsd"
+	default-lazy-init="true">
+	
+	<description>Spring公共配置</description>
+	<!-- 事务管理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+	<!-- 拦截器方式配置事物 -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+    	<tx:attributes>
+            <!-- 不添加rollback-for属性，事务只回滚运行时异常（RuntimeException）和错误（Error） -->
+            <tx:method name="add*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+            <tx:method name="up*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+            <tx:method name="del*" propagation="REQUIRED" rollback-for="java.lang.Exception" />
+            
+            <tx:method name="*" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+	
+	<!-- Spring aop事务管理 -->
+	<aop:config>
+        <aop:pointcut id="serviceMethods"
+            expression="execution(* cn.yfyue.**.bll.*(..))" />
+        <aop:advisor pointcut-ref="serviceMethods"
+            advice-ref="txAdvice" />
+    </aop:config>
+    
+    <!-- 配置使Spring采用CGLIB代理 -->
+    <aop:aspectj-autoproxy proxy-target-class="true" />	
+	
+	<!-- 事务注解支持 -->
+	<tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true" />
+
+	<!-- 扫描注解文件--> 
+	<!-- 自动扫描(自动注入)，扫描com.gcoreinc.service这个包以及它的子包的所有使用@Service注解标注的类 -->
+
+	<context:component-scan base-package="cn.yfyue.**.bll">
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.web.bind.annotation.ControllerAdvice" />
+	</context:component-scan>
+		
+	<!-- 配置数据源 -->
+	 <!--
+ -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://39.108.236.20:3306/LXC?zeroDateTimeBehavior=convertToNull" />
+		<property name="username" value="lxc" />
+		<property name="password" value="lxc#mysql" />
+		<property name="defaultAutoCommit" value="false" />
+	</bean>
+	
+	<!-- mybatis 配置 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+	   	<!-- 设置别名之类
+		<property name="configLocation" value="classpath:config/MyBatis-Configuration.xml"></property>
+	   	-->
+		<property name="dataSource" ref="dataSource" />
+		<!-- 挂载mapper.xml文件 -->
+		<property name="mapperLocations">
+			<list>
+				<value>classpath*:cn/yfyue/**/db/xml/*Mapper.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="cn.yfyue.**.db.inter" />
+	</bean>
+
+	<!-- 配置数据源缓冲池  
+		
+	<bean id="dataSource" 
+	   class="org.springframework.jndi.JndiObjectFactoryBean"> 
+	   <property name="jndiName">
+	       <value>java:comp/env/lxc_sys_db</value>
+	    </property>
+	</bean>
+ --> 
+ 
+    
+</beans>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE taglib PUBLIC "-//Sun Microsystems, Inc.//DTD JSP Tag Library 1.1//EN" "http://java.sun.com/j2ee/dtds/web-jsptaglibrary_1_1.dtd">
+ <taglib>
+    <tlibversion>1.0</tlibversion>
+    <jspversion>1.1</jspversion>
+    <shortname>yfyueSysTag</shortname>
+      <tag>
+          <name>SysTag</name>    <!--标签名-->
+          <tagclass>cn.yfyue.sysauth.tag.SysTag</tagclass> <!--对应的JAVABEAN-->
+          <bodycontent>jsp</bodycontent>
+      </tag>
+</taglib>

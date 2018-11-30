@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.yfyue.lxc.db.inter.DongguanMapper">
+  <resultMap id="BaseResultMap" type="cn.yfyue.lxc.db.model.Dongguan" >
+    <id column="MID" property="mid" jdbcType="INTEGER" />
+    <result column="M_NAME" property="mName" jdbcType="VARCHAR" />
+    <result column="M_ADDRESS" property="mAddress" jdbcType="VARCHAR" />
+    <result column="M_TYPE" property="mType" jdbcType="VARCHAR" />
+    <result column="M_APPOINTEDYIME" property="mAppointedyime" jdbcType="TIMESTAMP" />
+    <result column="M_TOGONO" property="mTogono" jdbcType="VARCHAR" />
+    <result column="M_TOTHETIME" property="mTothetime" jdbcType="VARCHAR" />
+    <result column="M_COMPANY_TEL" property="mCompanyTel" jdbcType="VARCHAR" />
+    <result column="M_RESULT" property="mResult" jdbcType="VARCHAR" />
+    <result column="M_FEEL" property="mFeel" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <select id="getDongGuangList" resultMap="BaseResultMap">
+  	SELECT MID, M_NAME, M_ADDRESS, M_TYPE, M_APPOINTEDYIME, M_TOGONO, M_TOTHETIME, M_COMPANY_TEL, 
+    M_RESULT, M_FEEL
+  	FROM dongguan where 1=1
+  	<if test="qkey !=null">
+  		AND M_NAME LIKE '%${qkey}%'
+  	</if>
+  	GROUP BY MID ORDER BY MID ASC
+  	LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER}
+  </select>
+</mapper>

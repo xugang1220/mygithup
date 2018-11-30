@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.yfyue.lxc.db.inter.TLxcCustomerMapper" >
+  <resultMap id="BaseResultMap" type="cn.yfyue.lxc.db.model.TLxcCustomer" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="remove" property="remove" jdbcType="BIT" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="update_time" property="updateTime" jdbcType="TIMESTAMP" />
+    <result column="wechat_id" property="wechatId" jdbcType="VARCHAR" />
+    <result column="admin" property="admin" jdbcType="BIT" />
+    <result column="recharge_money" property="rechargeMoney" jdbcType="REAL" />
+    <result column="giving_money" property="givingMoney" jdbcType="REAL" />
+    <result column="headimgurl" property="headimgurl" jdbcType="VARCHAR" />
+    <result column="nickname" property="nickname" jdbcType="VARCHAR" />
+    <result column="sumrechmoney" property="sumrechmoney" jdbcType="VARCHAR" />
+    <result column="sumgivingmoney" property="sumgivingmoney" jdbcType="VARCHAR" />
+  </resultMap>
+  
+  <resultMap id="CustomerStatementResultMap" type="cn.yfyue.lxc.db.model.CustomerStatement" >
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="billNo" property="billNo" jdbcType="VARCHAR" />
+    <result column="type" property="type" jdbcType="VARCHAR" />
+    <result column="inMoney" property="inMoney" jdbcType="VARCHAR" />
+    <result column="outMoney" property="outMoney" jdbcType="VARCHAR" />
+   </resultMap>
+   
+  <!-- 查询全部   修改显示可用总余额   -->
+		 <select id="getCustomerList" resultMap="BaseResultMap">
+		  		SELECT a.id,a.nickname,a.cname,a.create_time,
+				a.update_time,a.wechat_id,a.admin,a.recharge_money,
+				a.giving_money,headimgurl,nickname,
+				SUM(a.recharge_money+a.giving_money) as sunmoney
+				from t_lxc_customer a WHERE 1=1
+			<if test="qkey !=null">
+				AND a.nickname LIKE '%${qkey}%'
+			</if>
+			group by id ORDER BY id DESC
+			LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER}
+  		</select> 
+  		
+  		 <select id="getCustomerStatementList" resultMap="CustomerStatementResultMap">
+		  		SELECT t.*
+	FROM (
+       SELECT
+         r.create_time,
+         r.id          AS billNo,
+         "洗车下单"        AS type,
+         r.order_money AS inMoney,
+         r.back_money  AS outMoney,
+         r.order_status
+       FROM t_lxc_order r
+       WHERE r.pay_type = "PAYTYPE_CASH"
+             and
+             (r.order_status IN ("ORDERSTATUS_PAID", "ORDERSTATUS_HAVEORDER", "ORDERSTATUS_SUCCESS")
+              or (r.order_status ="ORDERSTATUS_CANCEL" and r.back_money!=0)
+             ) 
+       UNION ALL
+       (
+         SELECT
+           p.create_time,
+           p.id            AS billNo,
+           "套餐充值"          AS type,
+           p.rechare_money AS inMoney,
+           NULL            AS outMoney,
+           p.order_status
+         FROM t_lxc_package_recharge p where p.order_status="ORDERSTATUS_PAID"
+        
+       )
+     ) t where 1=1 
+     
+     <if test="type !=null &amp;&amp; type !='all'">
+     	 and t.type=#{type} 
+     </if>
+     <if test="beginTime !=null">
+     and t.create_time&gt;=#{beginTime} 
+     </if>
+     <if test="endTime !=null">
+     and t.create_time&lt;=#{endTime}
+     </if>
+     order by t.create_time desc 
+			LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER}
+  		</select> 
+  			
+  <!-- 显示充值总金额和赠送总金额 -->
+  <select id="getCustomerSumMoney" resultMap="BaseResultMap">
+		SELECT SUM(recharge_money) AS sumrechmoney,SUM(giving_money) AS sumgivingmoney
+		FROM t_lxc_customer  WHERE 1=1
+		<if test="startDate !=null and startDate !=''">
+              AND  create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}      
+		</if>
+		<if test="endDate !=null and endDate !=''">
+              AND  create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+		</if>
+		
+  </select>
+<!--统计-->  
+ <select id="getCustomerListCount" resultType="java.lang.Integer">
+    SELECT COUNT(1) FROM t_lxc_customer
+		 WHERE 1=1 
+		 <if test="qkey !=null">
+		    AND nickname LIKE '%${qkey}%'
+		 </if>
+ </select>
+ <!--统计客户资金流水-->
+ <select id="getCustomerStatementListCount" resultType="java.lang.Integer">
+		SELECT COUNT(1)
+	FROM (
+       SELECT
+         r.create_time,
+         r.id          AS billNo,
+         "洗车下单"        AS type,
+         r.order_money AS inMoney,
+         r.back_money  AS outMoney,
+         r.order_status
+       FROM t_lxc_order r
+       WHERE r.pay_type = "PAYTYPE_CASH"
+             and
+             (r.order_status IN ("ORDERSTATUS_PAID", "ORDERSTATUS_HAVEORDER", "ORDERSTATUS_SUCCESS")
+              or (r.order_status ="ORDERSTATUS_CANCEL" and r.back_money!=0)
+             )
+       UNION ALL
+       (
+         SELECT
+           p.create_time,
+           p.id            AS billNo,
+           "套餐充值"          AS type,
+           p.rechare_money AS inMoney,
+           NULL            AS outMoney,
+           p.order_status
+         FROM t_lxc_package_recharge p where p.order_status="ORDERSTATUS_PAID"
+         
+       )
+     ) t where 1=1 
+     <if test="type !=null &amp;&amp; type !='all'">
+     	 and t.type=#{type} 
+     </if>
+     <if test="beginTime !=null">
+     and t.create_time&gt;=#{beginTime} 
+     </if>
+     <if test="endTime !=null">
+     and t.create_time&lt;=#{endTime}
+     </if>
+ </select>
+ 
+ <select id="getCustomerStatementListSum" resultMap="CustomerStatementResultMap">
+		SELECT sum(t.inMoney) AS inMoney,sum(t.outMoney) AS outMoney 
+	FROM (
+       SELECT
+         r.create_time,
+         r.id          AS billNo,
+         "洗车下单"        AS type,
+         r.order_money AS inMoney,
+         r.back_money  AS outMoney,
+         r.order_status
+       FROM t_lxc_order r
+       WHERE r.pay_type = "PAYTYPE_CASH"
+             and
+             (r.order_status IN ("ORDERSTATUS_PAID", "ORDERSTATUS_HAVEORDER", "ORDERSTATUS_SUCCESS")
+              or (r.order_status ="ORDERSTATUS_CANCEL" and r.back_money!=0)
+             )
+       UNION ALL
+       (
+         SELECT
+           p.create_time,
+           p.id            AS billNo,
+           "套餐充值"          AS type,
+           p.rechare_money AS inMoney,
+           NULL            AS outMoney,
+           p.order_status
+         FROM t_lxc_package_recharge p where p.order_status="ORDERSTATUS_PAID"
+         
+       )
+     ) t where 1=1 
+     <if test="type !=null &amp;&amp; type !='all'">
+     	 and t.type=#{type} 
+     </if>
+     <if test="beginTime !=null">
+     and t.create_time&gt;=#{beginTime} 
+     </if>
+     <if test="endTime !=null">
+     and t.create_time&lt;=#{endTime}
+     </if>
+ </select>
+ 
+ <!-- 根据id删除客户 -->
+<delete id="delCustomerById">
+	DELETE FROM t_lxc_customer WHERE ID=#{id,jdbcType=INTEGER}
+</delete>
+<!-- 设置管理员 -->
+<update id="upCustomerById" parameterType="java.lang.Integer">
+	update t_lxc_customer 
+	<set >
+		<if test="admin!=null">
+			admin=#{admin,jdbcType=BIT}
+		</if>
+	</set>
+	where id=#{id,jdbcType=INTEGER}
+</update>
+<!-- 新增用户 -->
+<insert id="addCustomer" parameterType="cn.yfyue.lxc.db.model.TLxcCustomer">
+INSERT INTO t_lxc_customer(cname,remove,create_time,update_time,wechat_id,admin,headimgurl,nickname)
+VALUES(#{cname,jdbcType=VARCHAR},#{remove,jdbcType=BIT},#{createTime,jdbcType=TIMESTAMP},
+       #{updateTime,jdbcType=TIMESTAMP},#{wechatId,jdbcType=VARCHAR},#{admin,jdbcType=BIT},
+       #{headimgurl,jdbcType=VARCHAR},
+       #{nickname,jdbcType=VARCHAR})
+</insert>
+<!--根据前台的id查询客户的充值情况(返回单个客户)-->
+<select id="findCustomerByid" resultMap="BaseResultMap">
+	 SELECT id,cname,remove,create_time,update_time,wechat_id,admin,recharge_money,giving_money,headimgurl,nickname FROM t_lxc_customer
+	 WHERE wechat_id=#{wechatId,jdbcType=VARCHAR}
+</select>
+
+<!--根据openId查询客户id-->
+<select id="findCustomerByopenId" resultMap="BaseResultMap">
+	 SELECT id,cname,remove,create_time,update_time,wechat_id,admin,recharge_money,giving_money,headimgurl,nickname FROM t_lxc_customer
+	 WHERE wechat_id=#{openId,jdbcType=VARCHAR}
+</select>
+
+<!-- 查询客户是否是admin -->
+<select id="findCustomerAdminByid"  resultType="java.lang.String">
+	 SELECT admin FROM t_lxc_customer
+	 WHERE wechat_id=#{openId,jdbcType=VARCHAR} limit 1
+</select>
+
+<!-- 根据客户id统计客户的余额 -->
+<select id="getCustomermoney" resultType="java.lang.Integer">
+	SELECT SUM(recharge_money+giving_money) from t_lxc_customer WHERE wechat_id=#{openId,jdbcType=INTEGER}
+</select>
+
+<!--根据下单成功的openId来修改客户的余额(@Param("openId")Integer openId,@Param("money")Float money); -->
+<update id="upCustomermoney">
+	UPDATE t_lxc_customer 
+	<set>
+		recharge_money = #{rechargeMoney},
+		giving_money= #{givingMoney}
+	</set>
+		WHERE wechat_id = #{openId}
+</update>
+
+ <update id="updateRefundForBalance">
+ 	update t_lxc_customer set giving_money=giving_money+#{refundFee}
+	where wechat_id = #{openId}
+  </update>
+  
+  <select id="findByPrimaryKey" resultMap="BaseResultMap">
+     SELECT id,cname,remove,create_time,update_time,wechat_id,admin,recharge_money,giving_money,headimgurl,nickname FROM t_lxc_customer
+	 WHERE id=#{id}
+  </select>
+ <!-- //查询客户的WechatId
+	String findCustomerWechatId(@Param("wechatId")String WechatId);-->
+	<select id="findCustomerWechatId" resultType="java.lang.String">
+		SELECT wechat_id FROM t_lxc_customer
+	 WHERE wechat_id=#{openId,jdbcType=VARCHAR}
+	 
+	</select>
+  
+  <select id="findAdminOpenid" resultType="java.lang.String">
+     SELECT wechat_id FROM t_lxc_customer
+	 WHERE admin=true
+  </select>
+  
+  <!-- List<TLxcCustomer> getCustomerPort(@Param("startDate")String startDate,@Param("endDate")String endDate, 
+  @Param("startRow") int startRow,@Param("rownum")int rownum) -->
+  	<select id="getCustomerPort" resultMap="BaseResultMap">
+		  		SELECT a.id,a.nickname,a.cname,a.create_time,
+				a.update_time,a.wechat_id,a.admin,a.recharge_money,
+				a.giving_money,a.headimgurl,IFNULL(SUM(a.recharge_money+a.giving_money),0)as sunmoney
+				from t_lxc_customer a WHERE 1=1
+			<if test="startDate !=null and startDate!=''">
+                     AND  a.create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}
+				</if>
+			<if test="endDate !=null and endDate !=''">
+                    AND  a.create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+			</if>
+			group by a.id ORDER BY a.id DESC
+			LIMIT #{startRow,jdbcType=INTEGER},#{rownum,jdbcType=INTEGER}
+  		</select>
+<!--  int (@Param("startDate")String startDate,@Param("endDate")String endDate) -->
+	<select id="getCustomerPortCount" resultType="java.lang.Integer">
+			SELECT COUNT(1) FROM t_lxc_customer WHERE 1=1 
+		<if test="startDate !=null and startDate!=''">
+             AND  create_time <![CDATA[>=]]>#{startDate,jdbcType=TIMESTAMP}
+		</if>
+		<if test="endDate !=null and endDate !=''">
+             AND  create_time <![CDATA[<=]]>#{endDate,jdbcType=TIMESTAMP}
+		</if>
+	</select>
+</mapper>
